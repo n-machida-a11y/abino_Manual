@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マニュアル</title> <!-- 'インタラクティブ・マニュアル' から変更 -->
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    /* サイドナビゲーション */
+    .sidebar {
+      width: 280px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background-color: #fff;
+      border-right: 1px solid #dee2e6;
+      padding: 1.5rem;
+      transition: transform 0.3s ease-in-out;
+    }
+    @media (max-width: 991.98px) {
+      .sidebar {
+        transform: translateX(-100%);
+        z-index: 1050; /* モーダルの手前に来るように */
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+      }
+      .sidebar.show + .sidebar-backdrop {
+        display: block;
+      }
+    }
+    .sidebar .nav-link {
+      font-size: 1rem;
+      color: #495057;
+      border-radius: 0.375rem;
+      margin-bottom: 0.25rem;
+    }
+    .sidebar .nav-link.active,
+    .sidebar .nav-link:hover {
+      background-color: #e9ecef;
+      color: #0d6efd;
+    }
+    .sidebar .nav-link .bi {
+      margin-right: 0.75rem;
+      width: 1.25rem;
+    }
+    .sidebar .nav-heading {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6c757d;
+      text-transform: uppercase;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+      margin-left: 280px;
+      width: calc(100% - 280px);
+      padding: 2rem;
+      transition: margin-left 0.3s ease-in-out;
+    }
+    @media (max-width: 991.98px) {
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    /* ハンバーガーボタン (モバイル用) */
+    .sidebar-toggler {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1051;
+      display: none; /* デフォルトは非表示 */
+    }
+    @media (max-width: 991.98px) {
+      .sidebar-toggler {
+        display: block;
+      }
+    }
+
+    /* ローディングスピナー */
+    #loadingSpinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1060;
+    }
+
+    /* コンテンツセクション */
+    .content-section {
+      display: none;
+    }
+    .content-section.active {
+      display: block;
+    }
+    
+    .card-header .bi {
+      vertical-align: -0.125em;
+    }
+    
+    .procedure-step {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .procedure-step .step-number {
+      flex-shrink: 0;
+      width: 2.5rem;
+      height: 2.5rem;
+      background-color: #0d6efd;
+      color: white;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin-right: 1rem;
+    }
+    .procedure-step .step-content {
+      flex-grow: 1;
+    }
+
+    /* ★モックアップ用追加スタイル */
+    .border-dashed {
+      border: 2px dashed #ced4da;
+    }
+    
+    /* ★要望一覧テーブルのスタイル */
+    .feedback-table th:nth-child(1) { width: 25%; }
+    .feedback-table th:nth-child(2) { width: 15%; }
+    .feedback-table th:nth-child(3) { width: 60%; }
+  </style>
+</head>
+<body>
+
+  <!-- ローディングスピナー -->
+  <div id="loadingSpinner" class="d-none"> <!-- ★ d-none を追加 -->
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- ハンバーガーボタン (モバイル用) -->
+  <button class="btn btn-light sidebar-toggler shadow-sm" type="button" onclick="toggleSidebar()">
+    <i class="bi bi-list fs-5"></i>
+  </button>
+
+  <!-- サイドナビゲーション -->
+  <nav class="sidebar" id="sidebar">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fs-5 fw-bold mb-0">
+        <i class="bi bi-book-half text-primary"></i>
+        マニュアル
+      </h2>
+      <!-- モバイル用閉じるボタン -->
+      <button class="btn-close d-lg-none" type="button" onclick="toggleSidebar()"></button>
+    </div>
+    
+    <ul class="nav nav-pills flex-column">
+      <li class="nav-item">
+        <a class="nav-link active" href="#section-home" data-section="home">
+          <i class="bi bi-house-door-fill"></i>ホーム
+        </a>
+      </li>
+      
+      <!-- 一般社員向け -->
+      <li class="nav-heading">一般社員向け</li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-how-to-use" data-section="how-to-use">
+          <i class="bi bi-display"></i>アプリの基本
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-reserve" data-section="reserve">
+          <i class="bi bi-calendar-plus"></i>物品の予約方法
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-lend-return" data-section="lend-return">
+          <i class="bi bi-arrow-left-right"></i>貸出・返却の方法
+        </a>
+      </li>
+      <!-- ▼▼▼ 新規追加 ▼▼▼ -->
+      <li class="nav-item">
+        <a class="nav-link" href="#section-calendar-op" data-section="calendar-op">
+          <i class="bi bi-calendar-event"></i>カレンダーからの操作
+        </a>
+      </li>
+      <!-- ▲▲▲ 新規追加 ▲▲▲ -->
+
+      <!-- 管理者向け -->
+      <li class="nav-heading">管理者向け</li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-admin-items" data-section="admin-items">
+          <i class="bi bi-box-seam"></i>物品の登録・編集
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-admin-alerts" data-section="admin-alerts">
+          <i class="bi bi-bell-fill"></i>アラート機能の設定
+        </a>
+      </li>
+      
+      <!-- 管理者専用機能 (全員に表示するよう変更) -->
+      <li id="admin-menu-item" class="nav-item"> <!-- ★ d-none を削除 -->
+        <a class="nav-link" href="#section-admin-edit" data-section="admin-edit">
+          <i class="bi bi-pencil-square"></i>リンク編集 <!-- ★ (管) を削除 -->
+        </a>
+      </li>
+
+      <!-- ★要望管理メニュー (新規) -->
+      <li class="nav-heading">フィードバック</li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-feedback-form" data-section="feedback-form">
+          <i class="bi bi-pencil-fill"></i>要望の送信
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#section-feedback-list" data-section="feedback-list">
+          <i class="bi bi-list-task"></i>要望の進捗確認
+        </a>
+      </li>
+    </ul>
+
+    <!-- フッター (ユーザー情報) -->
+    <div class="mt-auto pt-3 border-top">
+      <small class="d-block text-muted mb-2" id="userInfo">
+        <i class="bi bi-person-circle"></i> 読み込み中...
+      </small>
+      <!-- ★修正要望ボタンはサイドバーメニューに移動したため削除 -->
+    </div>
+  </nav>
+
+  <!-- モバイル用サイドバー背景 -->
+  <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+  <!-- メインコンテンツ -->
+  <main class="main-content">
+
+    <!-- セクション: ホーム -->
+    <section id="section-home" class="content-section active">
+      <h1 class="display-6 fw-bold mb-3" id="appNameDisplay">貸与品管理マニュアル</h1>
+      <p class="lead mb-4">このページは「貸与品管理アプリ」の操作マニュアルです。<br>左側のメニューから知りたい操作を選択してください。</p>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h5 class="card-title fw-bold text-primary mb-3">
+            <i class="bi bi-window-fullscreen"></i> 貸与品管理アプリ
+          </h5>
+          <p class="card-text">物品の貸出状況の確認、予約、貸出処理はこちらから行います。</p>
+          <a href="#" id="appLinkButton" class="btn btn-primary btn-lg" target="_blank" rel="noopener noreferrer">
+            アプリを開く <i class="bi bi-box-arrow-up-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+      
+      <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-info-circle-fill text-info"></i> マニュアルについて
+        </div>
+        <div class="card-body">
+          <p>このマニュアルの操作方法がわからない場合や、内容に誤りを見つけた場合は、左側の「要望の送信」メニューから管理者にご連絡ください。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- セクション: アプリの基本 -->
+    <section id="section-how-to-use" class="content-section">
+      <h1 class="fw-bold mb-4">アプリの基本</h1>
+      <p>「貸与品管理アプリ」の基本的な見方と操作方法です。</p>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-search"></i> 画面の見方とフィルター
+        </div>
+        <div class="card-body">
+          <p>アプリは主に3つのタブで構成されています。</p>
+          
+          <!-- ★モックアップ: タブ構成 -->
+          <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link active" href="#">貸出状況</a></li>
+            <li class="nav-item"><a class="nav-link disabled" href="#">カレンダー</a></li>
+            <li class="nav-item"><a class="nav-link disabled" href="#">物品一覧</a></li>
+          </ul>
+          
+          <ul>
+            <li><strong>貸出状況タブ:</strong> 現在の物品のステータス（貸出中、予約あり、在庫）を一覧で確認できます。</li>
+            <li><strong>カレンダータブ:</strong> 物品ごとの貸出・予約スケジュールをカレンダー形式で確認できます。</li>
+            <li><strong>物品一覧タブ:</strong> 登録されているすべての物品情報を確認できます。（管理者のみ「新規登録」ボタンが表示されます）</li>
+          </ul>
+          <p>各タブの上部にあるフィルター機能（カテゴリ、物品名、ステータス、検索窓）を使うことで、表示する情報を絞り込むことができます。</p>
+        </div>
+      </div>
+      
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-hand-index-thumb"></i> 基本操作ボタン
+        </div>
+        <div class="card-body">
+          <p>「貸出状況」タブの一覧の左側にあるボタンから、各操作を行います。</p>
+
+          <!-- ★モックアップ: 操作ボタン -->
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped" style="table-layout: fixed;">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 250px;">操作</th>
+                  <th>物品名</th>
+                  <th>ステータス</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      <button class="btn btn-outline-primary btn-sm" disabled>カレンダー</button>
+                      <button class="btn btn-secondary btn-sm" disabled>編集</button>
+                      <button class="btn btn-warning btn-sm" disabled>返却</button>
+                      <button class="btn btn-success btn-sm" disabled>予約</button>
+                    </div>
+                  </td>
+                  <td>サンプル物品A</td>
+                  <td><span class="badge bg-danger">貸出中</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      <button class="btn btn-outline-primary btn-sm" disabled>カレンダー</button>
+                      <button class="btn btn-secondary btn-sm" disabled>編集</button>
+                      <button class="btn btn-info btn-sm" disabled>貸出</button>
+                      <button class="btn btn-success btn-sm" disabled>予約</button>
+                    </div>
+                  </td>
+                  <td>サンプル物品B</td>
+                  <td><span class="badge bg-success">在庫</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <ul class="mt-3">
+            <li><strong>カレンダー:</strong> その物品専用のカレンダー表示に切り替えます。</li>
+            <li><strong>編集:</strong> 貸出中または予約中の予定を変更します。</li>
+            <li><strong>貸出 / 予約:</strong> 新たに物品を借りる、または予約します。（在庫状況によって表示が変わります）</li>
+            <li><strong>返却:</strong> 「貸出中」の物品を返却処理します。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- セクション: 物品の予約方法 -->
+    <section id="section-reserve" class="content-section">
+      <h1 class="fw-bold mb-4">物品の予約方法</h1>
+      <p>物品を将来の日付で利用するために予約する手順です。</p>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「予約」ボタンの選択</h5>
+              <p>「貸出状況」タブで、予約したい物品の行にある「予約」ボタンをクリックします。</p>
+            </div>
+          </div>
+          
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">予約情報の入力</h5>
+              <p>「新規予約」モーダル（ポップアップ）が表示されます。<br>
+              以下の必須項目を入力してください。</p>
+              
+              <!-- ★モックアップ: 予約モーダル -->
+              <div class="card bg-light border-dashed mt-3 mb-3">
+                <div class="card-body">
+                  <h6 class="fw-bold">（イメージ）新規予約</h6>
+                  <div class="mb-2">
+                    <label class="form-label small">予約者<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" value="（あなたの氏名）" disabled>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">現場名<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" value="（通信機器の場合）" disabled>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col">
+                      <label class="form-label small">予約開始日<span class="text-danger ms-1">(必須)</span></label>
+                      <input type="date" class="form-control form-control-sm" disabled>
+                    </div>
+                    <div class="col">
+                      <label class="form-label small">予約終了日<span class="text-danger ms-1">(必須)</span></label>
+                      <input type="date" class="form-control form-control-sm" disabled>
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">通知先メールアドレス (任意)</label>
+                    <input type="email" class="form-control form-control-sm" placeholder="（カンマ区切りで複数可）" disabled>
+                  </div>
+                </div>
+              </div>
+              
+              <ul>
+                <li><strong>予約者:</strong> あなたの氏名を入力します。</li>
+                <li><strong>現場名:</strong> （カテゴリが「通信機器」の場合は必須）利用する現場名を入力します。</li>
+                <li><strong>予約開始日:</strong> 予約したい最初の日付を選択します。</li>
+                <li><strong>予約終了日:</strong> 予約したい最後の日付を選択します。</li>
+                <li><strong>通知先メールアドレス (任意):</strong> 予約完了時に通知を受け取りたい場合、メールアドレスを入力します。</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">予約の実行</h5>
+              <p>入力内容を確認し、「予約する」ボタンをクリックします。<br>
+              「予約を受け付けました。」と表示されれば完了です。</p>
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle-fill"></i> <strong>カレンダーからの予約</strong><br>
+            「カレンダー」タブで、予約したい物品の行（またはカレンダー）の利用したい日付をクリックすることでも予約操作が可能です。
+          </div>
+
+        </div>
+      </div>
+    </section>
+    
+    <!-- セクション: 貸出・返却の方法 -->
+    <section id="section-lend-return" class="content-section">
+      <h1 class="fw-bold mb-4">貸出・返却の方法</h1>
+      <p>物品を「今すぐ借りる」場合と、「使い終わって返す」場合の手順です。</p>
+
+      <h4 class="fw-bold mt-4 mb-3">貸出の方法 (今すぐ借りる)</h4>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「貸出」ボタンの選択</h5>
+              <p>「貸出状況」タブで、ステータスが「在庫」または「予約あり」の物品の行にある「貸出」ボタンをクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">貸出情報の入力</h5>
+              <p>「貸出処理」モーダルが表示されます。<br>
+              予約時と同様に、<strong>貸与者、現場名（通信機器は必須）、貸与日、返却予定日</strong>を入力します。</p>
+
+              <!-- ★モックアップ: 貸出処理モーダル -->
+              <div class="card bg-light border-dashed mt-3 mb-3">
+                <div class="card-body">
+                  <h6 class="fw-bold">（イメージ）貸出処理</h6>
+                  <p><strong>物品名:</strong> サンプル物品B</p>
+                  <div class="mb-2">
+                    <label class="form-label small">貸与者<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" value="（あなたの氏名）" disabled>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col">
+                      <label class="form-label small">貸与日<span class="text-danger ms-1">(必須)</span></label>
+                      <input type="date" class="form-control form-control-sm" disabled>
+                    </div>
+                    <div class="col">
+                      <label class="form-label small">返却予定日<span class="text-danger ms-1">(必須)</span></label>
+                      <input type="date" class="form-control form-control-sm" disabled>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">実行</h5>
+              <p>「実行」ボタンをクリックします。「貸出処理が完了しました。」と表示されれば完了です。物品のステータスが「貸出中」に変わります。</p>
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle-fill"></i> <strong>予約からの貸出</strong><br>
+            「予約」ステータスの物品は、予約日当日になると「貸出」ボタンが押せるようになります。また、管理者はカレンダーから手動で「貸出中」に変更することも可能です。
+          </div>
+        </div>
+      </div>
+
+      <h4 class="fw-bold mt-4 mb-3">返却の方法</h4>
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「返却」ボタンの選択</h5>
+              <p>「貸出状況」タブで、ステータスが「貸出中」の物品の行にある「返却」ボタンをクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">確認</h5>
+              <p>「この貸出を返却済みにしますか？」という確認メッセージが表示されます。</p>
+              
+              <!-- ★モックアップ: 返却確認 -->
+              <div class="card bg-light border-dashed mt-3 mb-3">
+                <div class="modal-dialog modal-sm" style="margin: 0;">
+                  <div class="modal-content">
+                    <div class="modal-header py-2">
+                      <h6 class="modal-title">確認</h6>
+                    </div>
+                    <div class="modal-body py-3">
+                      <p class="mb-0">この貸出を返却済みにしますか？</p>
+                    </div>
+                    <div class="modal-footer py-2">
+                      <button type="button" class="btn btn-secondary btn-sm" disabled>キャンセル</button>
+                      <button type="button" class="btn btn-primary btn-sm" disabled>OK</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">返却の実行</h5>
+              <p>「OK」ボタンをクリックします。「返却処理が完了しました。」と表示されれば完了です。物品のステータスが「在庫」または「予約あり」に戻ります。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- セクション: (管理) 物品の登録・編集 -->
+    <section id="section-admin-items" class="content-section">
+      <h1 class="fw-bold mb-4">物品の登録・編集</h1>
+      <p class="text-danger"><i class="bi bi-person-fill-gear"></i> このセクションは管理者向けの内容です。</p>
+      
+      <h4 class="fw-bold mt-4 mb-3">新規物品登録</h4>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「物品一覧」タブへ移動</h5>
+              <p>アプリの「物品一覧」タブをクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「新規物品登録」ボタン</h5>
+              <p>画面の右上にある緑色の「<i class="bi bi-plus-circle"></i> 新規物品登録」ボタンをクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">物品情報の入力</h5>
+              <p>「物品情報」モーダルが表示されます。<br>
+              以下の必須項目を入力してください。</p>
+
+              <!-- ★モックアップ: 物品情報モーダル -->
+              <div class="card bg-light border-dashed mt-3 mb-3">
+                <div class="card-body">
+                  <h6 class="fw-bold">（イメージ）物品情報</h6>
+                  <div class="mb-2">
+                    <label class="form-label small">管理番号<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" placeholder="EQ-001" disabled>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">物品名<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" placeholder="ノートPC (A)" disabled>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">カテゴリ<span class="text-danger ms-1">(必須)</span></label>
+                    <input type="text" class="form-control form-control-sm" placeholder="PC" disabled>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">校正日・入替日 (任意)</label>
+                    <input type="date" class="form-control form-control-sm" disabled>
+                  </div>
+                </div>
+              </div>
+
+              <ul>
+                <li><strong>管理番号:</strong> 物品固有のID（例: `EQ-001`）。重複はできません。</li>
+                <li><strong>物品名:</strong> 物品の名称（例: `ノートPC (A)`）。</li>
+                <li><strong>カテゴリ:</strong> 物品の分類（例: `PC`, `通信機器`）。</li>
+                <li><strong>校正日・入替日 (任意):</strong> この日付を過ぎると貸出・予約ができなくなる期限日です。</li>
+                <li><strong>備考 (任意):</strong> 補足情報。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h5 class="fw-bold">保存</h5>
+              <p>「保存」ボタンをクリックすると、一覧に新しい物品が追加されます。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="fw-bold mt-4 mb-3">物品情報の編集・削除</h4>
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <p>「物品一覧」タブの一覧の左側にあるボタンから操作します。</p>
+          <ul>
+            <li><strong>編集:</strong> 「編集」ボタンを押すと、登録時と同じモーダルが開きます。情報を修正して「保存」してください。</li>
+            <li><strong>削除:</strong> 「削除」ボタンを押します。確認画面で「OK」を押すと、その物品がマスタから削除されます。</li>
+          </ul>
+          <div class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle-fill"></i> <strong>注意</strong><br>
+            「貸出中」または「予約あり」の物品は、安全のため削除できません。先にすべての貸出・予約を完了またはキャンセルしてください。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- セクション: (管理) アラート機能の設定 -->
+    <section id="section-admin-alerts" class="content-section">
+      <h1 class="fw-bold mb-4">アラート機能の設定</h1>
+      <p class="text-danger"><i class="bi bi-person-fill-gear"></i> このセクションは管理者向けの内容です。</p>
+      <p>「貸与品管理アプリ」は、GASの「トリガー」機能を利用して、特定の条件で管理者に自動で通知メールを送信します。<br>
+      この設定は、GASスクリプトエディタから行う必要があります。</p>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-clock-history"></i> トリガーの設定手順
+        </div>
+        <div class="card-body p-4">
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">スクリプトエディタを開く</h5>
+              <p>「貸与品管理アプリ」のスプレッドシート（物品マスタや貸出履歴が保存されているDB）を開き、「拡張機能」メニューから「Apps Script」を選択します。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「トリガー」メニューを開く</h5>
+              <p>Apps Scriptエディタの左側にある時計のアイコン（<i class="bi bi-clock"></i>）「トリガー」をクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「トリガーを追加」</h5>
+              <p>画面右下の「＋ トリガーを追加」ボタンをクリックし、以下のアラートごとに設定を行います。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <h5 class="fw-bold mt-4 mb-3">1. 返却遅延アラート</h5>
+      <p>返却予定日を過ぎても「貸出中」のままの物品を通知します。</p>
+      <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>実行する関数:</strong> `sendOverdueEmailAlerts`（`返却.gs`内）</li>
+        <li class="list-group-item"><strong>イベントのソース:</strong> 時間主導型</li>
+        <li class="list-group-item"><strong>トリガーのタイプ:</strong> 日付ベースのタイマー</li>
+        <li class="list-group-item"><strong>時刻を選択:</strong> 任意（例: 午前8時～9時）</li>
+      </ul>
+
+      <h5 class="fw-bold mt-4 mb-3">2. 予約遅延アラート</h5>
+      <p>予約日を過ぎても「予約」のまま（「貸出」に変更されていない）の履歴を通知します。</p>
+      <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>実行する関数:</strong> `checkOverdueReservations`（`予約.gs`内）</li>
+        <li class="list-group-item"><strong>イベントのソース:</strong> 時間主導型</li>
+        <li class="list-group-item"><strong>トリガーのタイプ:</strong> 日付ベースのタイマー</li>
+        <li class="list-group-item"><strong>時刻を選択:</strong> 任意（例: 午前8時～9時）</li>
+      </ul>
+
+      <h5 class="fw-bold mt-4 mb-3">3. 校正期限アラート</h5>
+      <p>物品マスタに登録された「校正日・入替日」が近づいている物品（デフォルトでは30日前）を通知します。</p>
+      <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>実行する関数:</strong> `checkCalibrationDatesAndSendAlerts`（`校正期限.gs`内）</li>
+        <li class="list-group-item"><strong>イベントのソース:</strong> 時間主導型</li>
+        <li class="list-group-item"><strong>トリガーのタイプ:</strong> 日付ベースのタイマー</li>
+        <li class="list-group-item"><strong>時刻を選択:</strong> 任意（例: 午前8時～9時）</li>
+      </ul>
+      
+      <div class="alert alert-warning mt-3">
+        <i class="bi bi-exclamation-triangle-fill"></i> <strong>通知先の設定</strong><br>
+        これらすべてのアラートメールの通知先は、「貸与品管理アプリ」のスプレッドシート内にある「<strong>メールマスタ</strong>」シートで管理されています。
+      </div>
+    </section>
+    
+    <!-- セクション: (管理) リンク編集 -->
+    <section id="section-admin-edit" class="content-section">
+      <h1 class="fw-bold mb-4">リンク編集</h1>
+      <p class="text-muted"><i class="bi bi-gear-fill"></i> このセクションでは、マニュアルのホーム画面に表示されるアプリのリンク先や名称を変更できます。</p>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-link-45deg"></i> アプリリンク設定
+        </div>
+        <div class="card-body p-4">
+          <p>マニュアルのホーム画面に表示される「アプリ名」と「アプリURL」を編集します。</p>
+          <form id="adminForm">
+            <div class="mb-3">
+              <label for="adminAppName" class="form-label">アプリ名</label>
+              <input type="text" class="form-control" id="adminAppName" required>
+            </div>
+            <div class="mb-3">
+              <label for="adminAppUrl" class="form-label">アプリURL</label>
+              <input type="url" class="form-control" id="adminAppUrl" placeholder="https://script.google.com/macros/s/..." required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="adminSaveButton">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              保存する
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ▼▼▼ 新規追加セクション ▼▼▼ -->
+    <section id="section-calendar-op" class="content-section">
+      <h1 class="fw-bold mb-4">カレンダーからの操作</h1>
+      <p>「カレンダー」タブを利用して、視覚的に予約や貸出を行う手順です。</p>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-calendar-date"></i> カレンダーでの予定追加
+        </div>
+        <div class="card-body p-4">
+          <p>カレンダーの日付を直接クリックすることで、予定（貸出・予約）を追加できます。</p>
+          
+          <!-- ★モックアップ: カレンダービュー -->
+          <div class="card bg-light border-dashed mt-3 mb-3">
+            <div class="card-body">
+              <h6 class="fw-bold">（イメージ）カレンダータブ</h6>
+              <!-- フィルターモックアップ -->
+              <div class="input-group input-group-sm mb-2" style="max-width: 400px;">
+                <select class="form-select" disabled><option>カテゴリ (すべて)</option></select>
+                <select class="form-select" disabled><option>物品 (すべて)</option></select>
+              </div>
+              <!-- カレンダーモックアップ (簡易版) -->
+              <div class="table-responsive">
+                <table class="table table-bordered text-center" style="min-width: 600px; table-layout: fixed;">
+                  <thead class="table-light">
+                    <tr><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="bg-light text-muted small p-2">28</td>
+                      <td class="bg-light text-muted small p-2">29</td>
+                      <td class="bg-light text-muted small p-2">30</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">1</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">2</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">3</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">4</td>
+                    </tr>
+                    <tr>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">5</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">6</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">7</td>
+                      <td class="small p-2" style="cursor: pointer; position: relative;" title="クリックして予定追加">
+                        8
+                        <div class="bg-warning text-dark small rounded p-1 mt-1" style="font-size: 0.75rem; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">予約: 物品A</div>
+                      </td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">9</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">10</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">11</td>
+                    </tr>
+                    <tr>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">12</td>
+                      <td class="small p-2" style="cursor: pointer; position: relative; background-color: #f8d7da;" title="クリックして詳細表示">
+                        13
+                        <div class="bg-danger text-white small rounded p-1 mt-1" style="font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">貸出: 物品B</div>
+                      </td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">14</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">15</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">16</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">17</td>
+                      <td class="small p-2" style="cursor: pointer;" title="クリックして予定追加">18</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="procedure-step mt-3">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">日付の選択</h5>
+              <!-- ▼▼▼ 変更 ▼▼▼ -->
+              <p>「カレンダー」タブで、予定を入れたい日付をクリックします。</p>
+              <!-- ▲▲▲ 変更 ▲▲▲ -->
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">操作の選択</h5>
+              <p>「操作を選択」モーダルが表示されます。<br>
+              「貸出」（今すぐ借りる場合）または「予約」（未来の日付の場合）を選択します。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">情報の入力</h5>
+              <p>「物品の予約方法」や「貸出の方法」と同様のモーダルが開くので、貸与者や現場名を入力して「実行」または「予約する」をクリックします。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light fw-bold">
+          <i class="bi bi-pencil-square"></i> カレンダーでの予定編集・削除
+        </div>
+        <div class="card-body p-4">
+          <div class="procedure-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h5 class="fw-bold">予定のクリック</h5>
+              <p>カレンダーに表示されている予定（「貸出」または「予約」の色のついたバー）をクリックします。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h5 class="fw-bold">「予定詳細」の確認</h5>
+              <p>「予定詳細」モーダルが表示され、誰がいつまで利用するかが表示されます。</p>
+            </div>
+          </div>
+          <div class="procedure-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h5 class="fw-bold">操作の実行</h5>
+              <p>モーダルの下部にあるボタンから操作を選択します。</p>
+              <ul>
+                <li><strong>編集:</strong> 期間や予約者を変更します。</li>
+                <li><strong>返却:</strong> 「貸出中」の予定を「返却済み」にします。</li>
+                <li><strong>予約取消:</strong> 「予約」ステータスの予定をキャンセルします。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- ▲▲▲ 新規追加セクション ▲▲▲ -->
+
+
+    <!-- ★セクション: 要望の送信 (プレースホルダー変更) -->
+    <section id="section-feedback-form" class="content-section">
+      <h1 class="fw-bold mb-4">マニュアル修正要望フォーム</h1>
+      <!-- ★説明文を変更 -->
+      <p>このマニュアルの記載内容、または「貸与品管理アプリ」本体の機能について、修正や追加の要望があればこちらから送信してください。</p>
+      
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <form id="feedbackForm">
+            <div class="mb-3">
+              <label for="feedbackTitle" class="form-label">要望タイトル <span class="text-danger">*</span></label>
+              <!-- ★プレースホルダー変更 -->
+              <input type="text" class="form-control" id="feedbackTitle" placeholder="例: [アプリ要望] ◯◯の入力が分かりにくい" required>
+            </div>
+            <div class="mb-3">
+              <label for="feedbackDetails" class="form-label">要望の詳細 <span class="text-danger">*</span></label>
+              <!-- ★プレースホルダー変更 (改行コード &#10; を使用) -->
+              <textarea class="form-control" id="feedbackDetails" rows="6" placeholder="例: [アプリ要望] 貸出アプリのカレンダーで、土日も色付けしてほしい。&#10;例: [マニュアル要望] 物品の登録方法の手順を追記してほしい。" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" id="feedbackSendButton">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              <i class="bi bi-send-fill me-2"></i>この内容で送信する
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+    
+    <!-- ★セクション: 要望の進捗確認 (新規) -->
+    <section id="section-feedback-list" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold mb-0">要望の進捗確認</h1>
+        <button class="btn btn-outline-secondary" id="reloadFeedbackButton">
+          <i class="bi bi-arrow-clockwise"></i> 最新の状況を読み込む
+        </button>
+      </div>
+      <p>過去に送信された修正要望の対応状況一覧です。</p>
+
+      <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0 feedback-table">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">受付日時</th>
+                <th scope="col">ステータス</th>
+                <th scope="col">タイトル</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTableBody">
+              <!-- データはJavaScriptで読み込まれます -->
+              <tr>
+                <td colspan="3" class="text-center p-5">
+                  <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <span class="ms-2">読み込み中...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ★修正要望モーダル (削除) -->
+  
+  <!-- アラート用モーダル (汎用) -->
+  <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" id="alertModalHeader">
+          <h5 class="modal-title" id="alertModalTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="alertModalBody">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // --- グローバル変数 ---
+    let bsAlertModal = null;
+    let isAdmin = false;
+
+    // --- DOM要素 ---
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const userInfo = document.getElementById('userInfo');
+    const adminMenuItem = document.getElementById('admin-menu-item');
+    const appNameDisplay = document.getElementById('appNameDisplay');
+    const appLinkButton = document.getElementById('appLinkButton');
+    // const adminUserEmail = document.getElementById('adminUserEmail'); // ★ IDが存在しないため削除
+    const adminAppNameInput = document.getElementById('adminAppName');
+    const adminAppUrlInput = document.getElementById('adminAppUrl');
+    const sidebar = document.getElementById('sidebar');
+
+    // --- 初期化処理 ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // 汎用アラートモーダルのインスタンスを作成
+      bsAlertModal = new bootstrap.Modal(document.getElementById('alertModal'));
+
+      // 初期データをサーバーから読み込み
+      loadInitialData();
+
+      // ナビゲーションリンクのクリックイベント
+      document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const sectionId = link.getAttribute('data-section');
+          navigateTo(sectionId);
+          
+          // モバイル表示時にサイドバーを閉じる
+          if (window.innerWidth < 992) {
+            toggleSidebar(false);
+          }
+        });
+      });
+      
+      // ハッシュ（#）に基づいて初期セクションを読み込み
+      const initialSection = window.location.hash.substring(1) || 'home';
+      navigateTo(initialSection);
+
+      // リンク編集フォームの送信イベント
+      document.getElementById('adminForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveAdminLinks();
+      });
+
+      // ★ 修正要望フォーム (新規) の送信イベント
+      document.getElementById('feedbackForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendFeedbackForm();
+      });
+      
+      // ★ 要望一覧の更新ボタン (新規)
+      document.getElementById('reloadFeedbackButton').addEventListener('click', loadFeedbackList);
+    });
+
+    // --- 関数定義 ---
+
+    /**
+     * サイドバーの表示/非表示を切り替えます。
+     * @param {boolean} [forceShow] - (オプション) trueで強制表示、falseで強制非表示
+     */
+    function toggleSidebar(forceShow = null) {
+      if (forceShow === null) {
+        sidebar.classList.toggle('show');
+      } else {
+        sidebar.classList.toggle('show', forceShow);
+      }
+    }
+
+    /**
+     * 指定されたセクションに移動し、ナビゲーションのアクティブ状態を更新します。
+     * @param {string} sectionId - 表示するセクションのID (例: 'home')
+     */
+    function navigateTo(sectionId) {
+      // すべてのセクションを非表示
+      document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      // 対象のセクションを表示
+      const targetSection = document.getElementById(`section-${sectionId}`);
+      if (targetSection) {
+        targetSection.classList.add('active');
+      } else {
+        document.getElementById('section-home').classList.add('active'); // 見つからない場合はホームへ
+        sectionId = 'home'; // 以下のナビ更新のため
+      }
+      
+      // すべてのナビリンクのアクティブ状態を解除
+      document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+      
+      // 対象のナビリンクをアクティブ化
+      const activeLink = document.querySelector(`.sidebar .nav-link[data-section="${sectionId}"]`);
+      if (activeLink) {
+        activeLink.classList.add('active');
+      }
+
+      // ★ 要望一覧ページにアクセスしたら、データを自動読み込み
+      if (sectionId === 'feedback-list') {
+        loadFeedbackList();
+      }
+
+      // URLのハッシュを更新（履歴に残す）
+      window.location.hash = sectionId;
+    }
+
+    /**
+     * サーバーから初期データを読み込みます。
+     */
+    function loadInitialData() {
+      showLoading();
+      google.script.run
+        .withSuccessHandler(response => {
+          hideLoading();
+          
+          if (!response || !response.email) { // ★ emailの存在チェックを強化
+            showAlert('エラー', `サーバーからデータを取得できませんでした。${response ? response.email : ''}`);
+            return;
+          }
+
+          // ユーザー情報を表示
+          userInfo.innerHTML = `<i class="bi bi-person-circle"></i> ${response.email || '不明なユーザー'}`;
+          
+          isAdmin = response.isAdmin;
+          
+          // 管理者メニューの表示切り替え
+          if (isAdmin) {
+            adminMenuItem.classList.remove('d-none');
+            // adminUserEmail.textContent = response.email; // ★ 存在しないIDを参照していたためエラー。コメントアウト。
+          }
+
+          // マニュアルのコンテンツ（リンク）を更新
+          const config = response.config || {};
+          const appName = config.appName || '貸与品管理アプリ';
+          const appUrl = config.appUrl || '#';
+          
+          appNameDisplay.textContent = `${appName} マニュアル`;
+          appLinkButton.href = appUrl;
+          
+          // 管理者フォームに現在の値を設定
+          adminAppNameInput.value = appName;
+          adminAppUrlInput.value = appUrl;
+        })
+        .withFailureHandler(error => {
+          hideLoading();
+          userInfo.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger"></i> 読み込み失敗';
+          showAlert('致命的なエラー', 'データの読み込みに失敗しました: ' + error.message);
+        })
+        .loadInitialData();
+    }
+
+    /**
+     * [管理者用] リンク設定を保存します。
+     */
+    function saveAdminLinks() {
+      const appName = adminAppNameInput.value;
+      const appUrl = adminAppUrlInput.value;
+
+      if (!appName || !appUrl) {
+        showAlert('入力エラー', 'アプリ名とアプリURLは必須です。', true);
+        return;
+      }
+      
+      const button = document.getElementById('adminSaveButton');
+      setButtonLoading(button, true);
+
+      google.script.run
+        .withSuccessHandler(response => {
+          setButtonLoading(button, false);
+          if (response.success) {
+            showAlert('成功', response.message);
+            // 保存成功後、画面の表示も更新
+            appNameDisplay.textContent = `${appName} マニュアル`;
+            appLinkButton.href = appUrl;
+          } else {
+            showAlert('エラー', response.message, true);
+          }
+        })
+        .withFailureHandler(error => {
+          setButtonLoading(button, false);
+          showAlert('エラー', '保存に失敗しました: ' + error.message, true);
+        })
+        .saveLinks({ appName: appName, appUrl: appUrl });
+    }
+
+    /**
+     * ★ 修正要望を送信します (フォーム版)。
+     */
+    function sendFeedbackForm() {
+      const title = document.getElementById('feedbackTitle').value;
+      const details = document.getElementById('feedbackDetails').value;
+      
+      if (!title || !details) {
+        showAlert('入力エラー', '要望タイトルと要望の詳細は必須です。', true);
+        return;
+      }
+
+      const button = document.getElementById('feedbackSendButton');
+      setButtonLoading(button, true);
+
+      google.script.run
+        .withSuccessHandler(response => {
+          setButtonLoading(button, false);
+          if (response.success) {
+            showAlert('送信完了', response.message);
+            // フォームをリセット
+            document.getElementById('feedbackForm').reset();
+            // 自動で進捗確認ページに移動
+            navigateTo('feedback-list');
+          } else {
+            showAlert('送信エラー', response.message, true);
+          }
+        })
+        .withFailureHandler(error => {
+          setButtonLoading(button, false);
+          showAlert('送信エラー', '送信に失敗しました: ' + error.message, true);
+        })
+        .sendFeedback({ title: title, details: details }); // ★ データを変更
+    }
+
+    /**
+     * ★ 修正要望の一覧をサーバーから読み込み、テーブルに表示します。
+     */
+    function loadFeedbackList() {
+      const tableBody = document.getElementById('feedbackTableBody');
+      // 読み込み中表示
+      tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-5"><div class="spinner-border spinner-border-sm" role="status"></div><span class="ms-2">読み込み中...</span></td></tr>`;
+      
+      const button = document.getElementById('reloadFeedbackButton');
+      setButtonLoading(button, true);
+
+      google.script.run
+        .withSuccessHandler(feedbackList => {
+          setButtonLoading(button, false);
+          tableBody.innerHTML = ''; // 内容をクリア
+          
+          if (!feedbackList || feedbackList.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-5 text-muted">送信された要望はありません。</td></tr>`;
+            return;
+          }
+          
+          feedbackList.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            // ステータスに応じたバッジ
+            let statusBadge;
+            switch(item.status) {
+              case '受付済':
+                statusBadge = `<span class="badge bg-warning text-dark">${item.status}</span>`;
+                break;
+              case '対応中':
+                statusBadge = `<span class="badge bg-info">${item.status}</span>`;
+                break;
+              case '完了':
+                statusBadge = `<span class="badge bg-success">${item.status}</span>`;
+                break;
+              default:
+                statusBadge = `<span class="badge bg-secondary">${item.status || '不明'}</span>`;
+            }
+            
+            tr.innerHTML = `
+              <td>${item.timestamp}</td>
+              <td>${statusBadge}</td>
+              <td>${escapeHTML(item.title)}</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        })
+        .withFailureHandler(error => {
+          setButtonLoading(button, false);
+          tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-5 text-danger">読み込みに失敗しました: ${error.message}</td></tr>`;
+        })
+        .getFeedbackList();
+    }
+    
+    /**
+     * XSS対策のためのHTMLエスケープ
+     */
+    function escapeHTML(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[&<>"']/g, function(match) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match];
+      });
+    }
+
+    /**
+     * 汎用アラートモーダルを表示します。
+     * @param {string} title - モーダルのタイトル
+     * @param {string} message - 表示するメッセージ
+     * @param {boolean} [isError=false] - (オプション) エラー表示にするか
+     */
+    function showAlert(title, message, isError = false) {
+      const header = document.getElementById('alertModalHeader');
+      const titleEl = document.getElementById('alertModalTitle');
+      const bodyEl = document.getElementById('alertModalBody');
+
+      titleEl.textContent = title;
+      bodyEl.textContent = message;
+      
+      if (isError) {
+        header.classList.add('bg-danger', 'text-white');
+      } else {
+        header.classList.remove('bg-danger', 'text-white');
+      }
+      
+      bsAlertModal.show();
+    }
+
+    /**
+     * ボタンのローディング状態を切り替えます。
+     * @param {HTMLElement} button - 対象のボタン要素
+     * @param {boolean} isLoading - ローディング状態にするか
+     */
+    function setButtonLoading(button, isLoading) {
+      const spinner = button.querySelector('.spinner-border');
+      if (isLoading) {
+        button.disabled = true;
+        if (spinner) spinner.classList.remove('d-none');
+      } else {
+        button.disabled = false;
+        if (spinner) spinner.classList.add('d-none');
+      }
+    }
+    
+    /**
+     * ローディングスピナー（画面中央）の表示/非表示を切り替えます。
+     */
+    function showLoading() {
+      loadingSpinner.classList.remove('d-none');
+    }
+    function hideLoading() {
+      loadingSpinner.classList.add('d-none');
+    }
+
+  </script>
+</body>
+</html>
