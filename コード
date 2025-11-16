@@ -1,0 +1,330 @@
+/**
+ * @fileoverview
+ * インタラクティブ・マニュアルアプリ サーバーサイドスクリプト
+ * * 機能:
+ * 1. Webページの表示 (doGet)
+ * 2. ユーザー認証とマニュアルデータの取得 (loadInitialData)
+ * 3. マニュアルデータ（アプリリンク）の保存 (saveLinks)
+ * 4. 修正要望（フィードバック）のメール送信とシート記録 (sendFeedback)
+ * 5. 修正要望リストの取得 (getFeedbackList)
+ */
+
+// --- ユーザー定義設定 (要件定義より) ---
+
+/**
+ * マニュアルのリンク編集や管理機能を利用できる管理者のメールアドレス
+ * @type {string[]}
+ */
+const ADMIN_USERS = [
+  'abino.nishikawa3555@gmail.com',
+  'n-machida@race-number.co.jp'
+];
+
+/**
+ * 修正要望（フィードバック）の通知先メールアドレス
+ * @type {string}
+ */
+const FEEDBACK_RECIPIENT = 'n-machida@race-number.co.jp';
+
+
+// --- スプレッドシート設定 ---
+
+// データベースとして使用するスプレッドシートのID
+// null の場合、このスクリプトプロジェクトに紐づく（または新規作成される）スプレッドシートを使用します。
+const SPREADSHEET_ID = null;
+const CONFIG_SHEET_NAME = 'Config';
+const FEEDBACK_SHEET_NAME = 'Feedback'; // ★ 修正依頼を保存するシート名
+const APP_URL_KEY = 'appUrl'; // アプリURLを保存するキー
+const APP_NAME_KEY = 'appName'; // アプリ名を保存するキー
+
+/**
+ * データベース（スプレッドシート）への参照を取得します。
+ * @returns {SpreadsheetApp.Spreadsheet} スプレッドシートオブジェクト
+ */
+function getDb_() {
+  try {
+    if (SPREADSHEET_ID) {
+      return SpreadsheetApp.openById(SPREADSHEET_ID);
+    }
+
+    // 1. バインドされたスプレッドシートを取得しようと試みる
+    let ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) {
+      return ss;
+    }
+
+    // 2. スタンドアロンの場合: スクリプトプロパティに保存されたIDを確認
+    const scriptProps = PropertiesService.getScriptProperties();
+    const existingId = scriptProps.getProperty('SPREADSHEET_ID');
+    if (existingId) {
+      try {
+        return SpreadsheetApp.openById(existingId);
+      } catch (e) {
+        // IDが無効（削除されたなど）の場合、次に進んで新規作成
+        Logger.log('保存されていたスプレッドシートIDが無効でした: ' + existingId);
+      }
+    }
+
+    // 3. 該当なしの場合: 新規に作成し、IDを保存する
+    ss = SpreadsheetApp.create('マニュアルアプリ設定 (自動作成)');
+    const ssId = ss.getId();
+    scriptProps.setProperty('SPREADSHEET_ID', ssId);
+    Logger.log('設定用スプレッドシートを新規作成しました: ' + ssId);
+    return ss;
+
+  } catch (e) {
+    Logger.log('スプレッドシートを開けませんでした: ' + e);
+    throw new Error('データベース（スプレッドシート）にアクセスできません。');
+  }
+}
+
+/**
+ * 設定シートを取得または作成します。
+ * @param {SpreadsheetApp.Spreadsheet} ss
+ * @returns {SpreadsheetApp.Sheet} 設定シート
+ */
+function getConfigSheet_(ss) {
+  let sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG_SHEET_NAME);
+    // 初期設定 (A列: Key, B列: Value)
+    sheet.getRange('A1:B2').setValues([
+      [APP_NAME_KEY, '貸与品管理アプリ'], // '貸与品管理アプリ (名称未設定)' から変更
+      [APP_URL_KEY, 'https://script.google.com/macros/s/AKfycbx8LVrIL2h967yL-hKSsTqua6zL9zV1vhscbKzbtBZlEx2s1AavaHZylHKjsNM3lC-u/exec'] // 要件定義のURLをデフォルト値として設定
+    ]);
+    Logger.log('Configシートを初期設定で作成しました。');
+  }
+  return sheet;
+}
+
+/**
+ * スプレッドシートから設定値を取得します。
+ * @returns {Object} 設定データ (例: { appUrl: '...', appName: '...' })
+ */
+function getConfigData_() {
+  const ss = getDb_();
+  const sheet = getConfigSheet_(ss);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  
+  let config = {};
+  values.forEach(row => {
+    if (row[0] && row[1]) {
+      config[row[0]] = row[1];
+    }
+  });
+
+  // 必須キーがなければデフォルト値を入れる
+  if (!config[APP_URL_KEY]) config[APP_URL_KEY] = 'https://script.google.com/macros/s/AKfycbx8LVrIL2h967yL-hKSsTqua6zL9zV1vhscbKzbtBZlEx2s1AavaHZylHKjsNM3lC-u/exec';
+  if (!config[APP_NAME_KEY]) config[APP_NAME_KEY] = '貸与品管理アプリ';
+
+  return config;
+}
+
+/**
+ * スプレッドシートに設定値を保存します。
+ * @param {string} key 保存するキー
+ * @param {string} value 保存する値
+ */
+function setConfigData_(key, value) {
+  const ss = getDb_();
+  const sheet = getConfigSheet_(ss);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  
+  let keyFound = false;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i][0] === key) {
+      sheet.getRange(i + 1, 2).setValue(value);
+      keyFound = true;
+      break;
+    }
+  }
+  
+  if (!keyFound) {
+    sheet.appendRow([key, value]);
+  }
+}
+
+/**
+ * ★ 修正依頼を指定されたシートに追記します。
+ * @param {Object} feedbackData - { title: string, details: string }
+ */
+function logFeedbackToSheet_(feedbackData) {
+  try {
+    const ss = getDb_();
+    let sheet = ss.getSheetByName(FEEDBACK_SHEET_NAME);
+
+    // シートが存在しない場合はヘッダー付きで新規作成
+    if (!sheet) {
+      sheet = ss.insertSheet(FEEDBACK_SHEET_NAME);
+      // ご指定のヘッダーを設定
+      sheet.appendRow(['受付日時', 'タイトル', '詳細', 'ステータス']);
+      Logger.log('Feedbackシートを新規作成しました。');
+    }
+
+    // データを追記
+    const timestamp = Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss");
+    sheet.appendRow([
+      timestamp,                // 受付日時 (例: 2025/11/12 13:46:58)
+      feedbackData.title,     // タイトル
+      feedbackData.details,   // 詳細
+      '受付済'                  // ステータス (★ "未対応" から "受付済" に変更)
+    ]);
+
+  } catch (e) {
+    Logger.log('フィードバックのスプレッドシートへの書き込みに失敗しました: ' + e);
+    // ここではエラーをスローしない（メール送信は試行させたいため）
+  }
+}
+
+/**
+ * ★ Feedbackシートから要望一覧を取得します。
+ * @returns {Array<Object>} 要望データの配列
+ */
+function getFeedbackList() {
+  try {
+    const ss = getDb_();
+    const sheet = ss.getSheetByName(FEEDBACK_SHEET_NAME);
+    
+    if (!sheet || sheet.getLastRow() < 2) {
+      // ヘッダー行しかない、またはシートがない
+      return [];
+    }
+
+    // ヘッダー（1行目）を除くすべてのデータを取得
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
+    
+    // オブジェクトの配列にマッピング
+    const feedbackList = values.map(row => ({
+      timestamp: Utilities.formatDate(new Date(row[0]), "Asia/Tokyo", "yyyy/MM/dd HH:mm"), // 時刻をフォーマット
+      title: row[1],
+      details: row[2], // 詳細も一応渡す（現在は一覧に表示しないが）
+      status: row[3]
+    }));
+
+    // 新しい順（降順）に並び替え
+    return feedbackList.reverse();
+
+  } catch (e) {
+    Logger.log('getFeedbackList Error: ' + e);
+    return []; // エラー時は空配列を返す
+  }
+}
+
+// --- Web アプリケーション ---
+
+/**
+ * GETリクエストを処理し、HTMLページを表示します。
+ * @param {Object} e - イベントオブジェクト
+ * @returns {HtmlService.HtmlOutput} HTML出力
+ */
+function doGet(e) {
+  return HtmlService.createTemplateFromFile('index')
+    .evaluate()
+    .setTitle('マニュアル') // 'インタラクティブ・マニュアル' から変更
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// --- クライアントから呼び出される関数 ---
+
+/**
+ * ページ読み込み時にクライアントから呼び出されます。
+ * ユーザー情報とマニュアルデータを返します。
+ * @returns {Object} { email: string, isAdmin: boolean, config: Object }
+ */
+function loadInitialData() {
+  try {
+    const email = Session.getActiveUser().getEmail();
+    // const isAdmin = ADMIN_USERS.includes(email.toLowerCase());
+    const isAdmin = true; // ★全員に管理者権限を付与するよう変更
+    const config = getConfigData_();
+    
+    return {
+      email: email,
+      isAdmin: isAdmin,
+      config: config
+    };
+  } catch (e) {
+    Logger.log('loadInitialData Error: ' + e);
+    // エラーが発生した場合も、クライアント側で処理できるようオブジェクトを返す
+    return {
+      email: `エラー: ${e.message}`,
+      isAdmin: false,
+      config: {
+        [APP_URL_KEY]: '',
+        [APP_NAME_KEY]: 'データ取得エラー'
+      }
+    };
+  }
+}
+
+/**
+ * [管理者用] アプリのリンク情報を保存します。
+ * @param {Object} data - { appUrl: string, appName: string }
+ * @returns {Object} { success: boolean, message: string }
+ */
+function saveLinks(data) {
+  const email = Session.getActiveUser().getEmail();
+  // const isAdmin = ADMIN_USERS.includes(email.toLowerCase());
+
+  // if (!isAdmin) {
+  //   return { success: false, message: '権限がありません。' };
+  // }
+  // ★全員が保存できるように管理者チェックを削除
+
+  try {
+    if (data.appUrl) {
+      setConfigData_(APP_URL_KEY, data.appUrl);
+    }
+    if (data.appName) {
+      setConfigData_(APP_NAME_KEY, data.appName);
+    }
+    return { success: true, message: 'リンク情報を更新しました。' };
+  } catch (e) {
+    Logger.log('saveLinks Error: ' + e);
+    return { success: false, message: '保存中にエラーが発生しました: ' + e.message };
+  } // ★ 構文エラー（欠けていた '}'）を修正
+}
+
+/**
+ * ユーザーからのフィードバックをメールで送信し、スプレッドシートに記録します。
+ * @param {Object} feedbackData - { title: string, details: string }
+ * @returns {Object} { success: boolean, message: string }
+ */
+function sendFeedback(feedbackData) {
+  const userEmail = Session.getActiveUser().getEmail();
+  
+  if (!feedbackData.title || !feedbackData.details) {
+    return { success: false, message: 'タイトルと詳細は必須です。' };
+  }
+
+  // ★ 1. スプレッドシートに記録する
+  logFeedbackToSheet_(feedbackData);
+
+  // 2. メールを送信する
+  try {
+    const subject = `【マニュアル修正要望】${feedbackData.title}`;
+    const body = `
+マニュアルの修正要望が送信されました。
+
+送信者: ${userEmail}
+タイトル: ${feedbackData.title}
+
+--- 内容 ---
+${feedbackData.details}
+    `;
+
+    MailApp.sendEmail({
+      to: FEEDBACK_RECIPIENT,
+      subject: subject,
+      body: body,
+      replyTo: userEmail
+    });
+
+    return { success: true, message: '修正要望を送信しました。' };
+  } catch (e) {
+    Logger.log('sendFeedback Error (Email): ' + e);
+    return { success: false, message: 'メール送信中にエラーが発生しました: ' + e.message };
+  }
+}
